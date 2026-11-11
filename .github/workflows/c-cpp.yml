@@ -6,7 +6,9 @@ on:
 
 jobs:
   build-linux64:
-    runs-on: ubuntu-22.04
+    # premake 5.0.0-beta7 требует glibc 2.38, поэтому проект генерируется на свежем раннере,
+    # а компилируется в Ubuntu 20.04 (glibc 2.31) — чтобы модуль грузился и на старых серверах.
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
     - uses: actions/checkout@v4
@@ -22,10 +24,18 @@ jobs:
         sudo cp premake5 /usr/bin
     - name: Generate project
       run: premake5 --gmcommon=garrysmod_common gmake
-    - name: Build
+    - name: Build (Ubuntu 20.04 container)
       run: |
-        cd projects/linux/gmake
-        make config=releasewithsymbols_x86_64 -j$(nproc)
+        docker run --rm -v "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE" -w "$GITHUB_WORKSPACE/projects/linux/gmake" ubuntu:20.04 bash -c '
+          set -e
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update -qq
+          apt-get install -y -qq g++ make > /dev/null
+          make config=releasewithsymbols_x86_64 -j$(nproc)
+        '
+    - name: Check glibc requirements
+      run: |
+        objdump -T projects/linux/gmake/x86_64/ReleaseWithSymbols/gmsv_voicefx_linux64.dll | grep -o 'GLIBC_[0-9.]*' | sort -uV | tail -3
     - uses: actions/upload-artifact@v4
       with:
         name: gmsv_voicefx_linux64.dll

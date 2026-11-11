@@ -28,3 +28,7 @@ CreateWorkspace({name = "voicefx"})
 
 		filter({"platforms:x86"})
 			libdirs({"opus/lib32"})
+
+		-- не зависеть от версии libstdc++ на сервере
+		filter({"system:linux"})
+			linkoptions({"-static-libstdc++", "-static-libgcc"})
