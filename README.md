@@ -19,6 +19,7 @@
 | `SetEnabled(bool)` | глобальный выключатель |
 | `SetMaxClients(n)` | обычно `game.MaxPlayers()` |
 | `SetParam(name, value)` | `highpass`, `lowpass`, `mid_freq`, `mid_gain`, `mid_q`, `drive`, `crush_bits`, `noise`, `gain` |
+| `SetListening(recvIdx, sendIdx, listen, proximity)` | сразу выставить маску движка, не ждать пересчёта (~0,3 с) |
 | `GetListening(recvIdx, sendIdx)` | маска движка, для отладки |
 | `GetStats()` | обработано пакетов, ошибок |
 

@@ -274,6 +274,23 @@ LUA_FUNCTION_STATIC(voicefx_SetParam) {
 	return 0;
 }
 
+// voicefx.SetListening(receiverEntIndex, senderEntIndex, listen, proximity)
+// Сразу выставляет маску движка, не дожидаясь его периодического пересчёта (~0,3 с):
+// без этого при нажатии рации начало фразы не доходит до дальних слушателей.
+// proximity = true — 3D-звук (громкость падает с расстоянием), false — «в ухо».
+LUA_FUNCTION_STATIC(voicefx_SetListening) {
+	int receiver = static_cast<int>(LUA->CheckNumber(1));
+	int sender = static_cast<int>(LUA->CheckNumber(2));
+	bool listen = LUA->GetBool(3);
+	bool proximity = LUA->GetBool(4);
+
+	if (g_voice && ValidIndex(receiver) && ValidIndex(sender) && receiver != sender) {
+		g_voice->SetClientListening(receiver, sender, listen);
+		g_voice->SetClientProximity(receiver, sender, proximity);
+	}
+	return 0;
+}
+
 // voicefx.GetListening(receiverEntIndex, senderEntIndex) — для отладки масок движка.
 LUA_FUNCTION_STATIC(voicefx_GetListening) {
 	int receiver = static_cast<int>(LUA->CheckNumber(1));
@@ -329,9 +346,10 @@ GMOD_MODULE_OPEN() {
 		SetFunction(LUA, "SetEnabled", voicefx_SetEnabled);
 		SetFunction(LUA, "SetMaxClients", voicefx_SetMaxClients);
 		SetFunction(LUA, "SetParam", voicefx_SetParam);
+		SetFunction(LUA, "SetListening", voicefx_SetListening);
 		SetFunction(LUA, "GetListening", voicefx_GetListening);
 		SetFunction(LUA, "GetStats", voicefx_GetStats);
-		LUA->PushString("1.0.0");
+		LUA->PushString("1.1.0");
 		LUA->SetField(-2, "Version");
 	LUA->SetField(-2, "voicefx");
 	LUA->Pop();
