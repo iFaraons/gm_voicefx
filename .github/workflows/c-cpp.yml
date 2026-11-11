@@ -26,11 +26,11 @@ jobs:
       run: premake5 --gmcommon=garrysmod_common gmake
     - name: Build (Ubuntu 20.04 container)
       run: |
-        docker run --rm -v "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE" -w "$GITHUB_WORKSPACE/projects/linux/gmake" ubuntu:20.04 bash -c '
+        docker run --rm --network host -v "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE" -w "$GITHUB_WORKSPACE/projects/linux/gmake" ubuntu:20.04 bash -c '
           set -e
           export DEBIAN_FRONTEND=noninteractive
-          apt-get update -qq
-          apt-get install -y -qq g++ make > /dev/null
+          apt-get -o Acquire::Retries=5 update -qq
+          apt-get -o Acquire::Retries=5 install -y -qq g++ make > /dev/null
           make config=releasewithsymbols_x86_64 -j$(nproc)
         '
     - name: Check glibc requirements
