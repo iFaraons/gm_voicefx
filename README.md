@@ -1,37 +1,34 @@
-# gm_8bit
-A module for manipulating voice data in Garry's Mod.
+# gm_voicefx
 
-# What does it do?
-gm_8bit is designed to be a starting point for any kind of voice stream manipulation you might want to do on a Garry's Mod server (or any source engine server, with a bit of adjustment).
+Серверный модуль Garry's Mod: эффект «голос из рации» для тех, кто слышит игрока по рации.
+Стоящие рядом слышат живой голос.
 
-gm_8bit can decompress and recompress steam voice packets. It includes an SV_BroadcastVoiceData hook to allow server operators to incercept and manipulate this voice data. It makes several things possible, including:
-* Relaying server voice data to external locations
-* Performing voice recognition and producing transcripts
-* Recording voice data in compressed or uncompressed form
-* Applying transformation to user voice streams, for example pitch correction, noise suppression, or gain control.
+Основан на [gm_8bit](https://github.com/Meachamp/gm_8bit) (Meachamp), лицензия LGPL-2.1 (см. LICENSE).
 
-gm_8bit currently has reference implementations for relaying voice data and applying transformations to voice streams. See the `voice-relay` repository for an example implementation of a server that uses gm_8bit to relay server voice communications to a discord channel.
+## Как работает
+Перехватывается `SV_BroadcastVoiceData`. Если у говорящего есть радиослушатели (`voicefx.SetRoute`),
+оригинал вызывается дважды: исходный пакет — всем, кроме них; пакет с эффектом
+(декодирование Opus -> полосовой фильтр, подъём середины, перегруз, шум -> кодирование) — только им.
+Адресаты выбираются временной правкой масок `IVoiceServer` (VoiceServer002), после вызова маски восстанавливаются.
 
-# Builds
-Both windows and linux builds are available with every commit. See the actions page.
+## Lua API (глобальная таблица `voicefx`)
+| Функция | Описание |
+|---|---|
+| `SetRoute(talkerIdx, listenerIdx, viaRadio)` | ent-индексы; слышит ли listener говорящего через рацию |
+| `ClearPlayer(idx)` / `ClearAll()` | сброс маршрутов и состояния кодека |
+| `SetEnabled(bool)` | глобальный выключатель |
+| `SetMaxClients(n)` | обычно `game.MaxPlayers()` |
+| `SetParam(name, value)` | `highpass`, `lowpass`, `mid_freq`, `mid_gain`, `mid_q`, `drive`, `crush_bits`, `noise`, `gain` |
+| `GetListening(recvIdx, sendIdx)` | маска движка, для отладки |
+| `GetStats()` | обработано пакетов, ошибок |
 
-# API
-`eightbit.EnableBroadcast(bool)` Sets whether the module should relay voice packets to `localhost:4000`.
+## Сборка
+Нужны [garrysmod_common](https://github.com/danielga/garrysmod_common) (ветка `x86-64-support-sourcesdk`, с сабмодулями) и premake5.
 
-`eightbit.SetBroadcastIP(string)` Controls what IP the module should relay voice packets to, if broadcast is enabled.
+    premake5 --gmcommon=../garrysmod_common gmake    # Linux
+    cd projects/linux/gmake && make config=releasewithsymbols_x86_64
 
-`eightbit.SetBroadcastPort(number)` Controls what port the module should relay voice packets to, if broadcast is enabled.
+    premake5 --gmcommon=../garrysmod_common vs2022   # Windows
 
-`eightbit.EnableEffect(userid, number)` Sets whether to enable audio effect for a given userid. Takes an eightbit.EFF enum.
-
-`eightbit.SetGainFactor(number)` Sets the gain multiplier to apply to affected userids.
-
-`eightbit.SetCrushFactor(number)` Sets the bitcrush factor for the reference bitcrush implementation.
-
-`eightbit.SetDesampleRate(number)` Sets the desample multiplier, used by EFF_DESAMPLE.
-
-`eightbit.EFF_NONE` No audio effect.
-
-`eightbit.EFF_DESAMPLE` Desamples audio, new frequency is 1/(1-1/n).
-
-`eightbit.EFF_BITCRUSH` Deep fries the audio. Governed by a gain factor and a quantization factor.
+Готовый файл кладётся в `garrysmod/lua/bin/` (`gmsv_voicefx_linux64.dll` / `gmsv_voicefx_win32.dll`).
+CI: `.github/workflows/c-cpp.yml` собирает linux64, win32 и win64.

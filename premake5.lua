@@ -8,8 +8,10 @@ local gmcommon = assert(_OPTIONS.gmcommon or os.getenv("GARRYSMOD_COMMON"),
 	"you didn't provide a path to your garrysmod_common (https://github.com/danielga/garrysmod_common) directory")
 include(gmcommon .. "/generator.v3.lua")
 
-CreateWorkspace({name = "eightbit"})
+CreateWorkspace({name = "voicefx"})
 	CreateProject({serverside = true})
+		cppdialect("C++17")
+
 		IncludeSDKCommon()
 		IncludeSDKTier0()
 		IncludeSDKTier1()
@@ -22,10 +24,7 @@ CreateWorkspace({name = "eightbit"})
 		includedirs("opus/include")
 
 		filter({"platforms:x86_64"})
-			libdirs {"opus/lib64"}
+			libdirs({"opus/lib64"})
 
 		filter({"platforms:x86"})
-			libdirs {"opus/lib32"}
-
-		filter("system:windows")
-			links("ws2_32")
+			libdirs({"opus/lib32"})
